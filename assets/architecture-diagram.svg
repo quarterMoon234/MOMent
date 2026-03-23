@@ -1,0 +1,75 @@
+<svg width="1200" height="520" viewBox="0 0 1200 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="520" fill="#F7F4EE"/>
+
+  <text x="60" y="52" fill="#2F3A32" font-family="Arial, sans-serif" font-size="28" font-weight="700">
+    AI NurtureNote Backend Architecture
+  </text>
+  <text x="60" y="84" fill="#5E6B61" font-family="Arial, sans-serif" font-size="16">
+    Diary storage, background AI analysis, and retrieval flow
+  </text>
+
+  <rect x="60" y="140" width="170" height="86" rx="16" fill="#DCEED8" stroke="#6A8F6B" stroke-width="2"/>
+  <text x="93" y="177" fill="#2F3A32" font-family="Arial, sans-serif" font-size="22" font-weight="700">Frontend</text>
+  <text x="92" y="205" fill="#3F5144" font-family="Arial, sans-serif" font-size="15">Diary input / result view</text>
+
+  <rect x="300" y="120" width="250" height="126" rx="18" fill="#FFF7DA" stroke="#B49A3A" stroke-width="2"/>
+  <text x="352" y="158" fill="#5A4A11" font-family="Arial, sans-serif" font-size="24" font-weight="700">FastAPI Backend</text>
+  <text x="335" y="188" fill="#6A5A22" font-family="Arial, sans-serif" font-size="16">POST /entries</text>
+  <text x="335" y="212" fill="#6A5A22" font-family="Arial, sans-serif" font-size="16">GET /entries</text>
+  <text x="335" y="236" fill="#6A5A22" font-family="Arial, sans-serif" font-size="16">POST /analyze</text>
+
+  <rect x="620" y="70" width="250" height="108" rx="18" fill="#D9ECFF" stroke="#5C8DB8" stroke-width="2"/>
+  <text x="685" y="110" fill="#27435E" font-family="Arial, sans-serif" font-size="24" font-weight="700">App DB</text>
+  <text x="667" y="138" fill="#365771" font-family="Arial, sans-serif" font-size="16">SQLite / Postgres</text>
+  <text x="658" y="162" fill="#365771" font-family="Arial, sans-serif" font-size="16">Diary + analysis_json</text>
+
+  <rect x="620" y="215" width="250" height="108" rx="18" fill="#FFE1D7" stroke="#C6785B" stroke-width="2"/>
+  <text x="654" y="255" fill="#6A3220" font-family="Arial, sans-serif" font-size="24" font-weight="700">Background Task</text>
+  <text x="668" y="283" fill="#7B4532" font-family="Arial, sans-serif" font-size="16">generate_entry_analysis</text>
+  <text x="664" y="307" fill="#7B4532" font-family="Arial, sans-serif" font-size="16">async post-processing</text>
+
+  <rect x="940" y="70" width="200" height="108" rx="18" fill="#E4DCF8" stroke="#7C66B7" stroke-width="2"/>
+  <text x="984" y="110" fill="#43316F" font-family="Arial, sans-serif" font-size="23" font-weight="700">OpenAI</text>
+  <text x="973" y="138" fill="#534282" font-family="Arial, sans-serif" font-size="16">Responses API</text>
+  <text x="970" y="162" fill="#534282" font-family="Arial, sans-serif" font-size="16">Assistants fallback</text>
+
+  <rect x="940" y="225" width="200" height="98" rx="18" fill="#FDE6EC" stroke="#C56E8B" stroke-width="2"/>
+  <text x="960" y="263" fill="#6E3144" font-family="Arial, sans-serif" font-size="22" font-weight="700">Vector Store</text>
+  <text x="980" y="289" fill="#7C4355" font-family="Arial, sans-serif" font-size="16">file_search</text>
+  <text x="965" y="311" fill="#7C4355" font-family="Arial, sans-serif" font-size="16">papers / guides</text>
+
+  <rect x="940" y="365" width="200" height="82" rx="18" fill="#E7F5E9" stroke="#6B9A72" stroke-width="2"/>
+  <text x="980" y="400" fill="#35563A" font-family="Arial, sans-serif" font-size="22" font-weight="700">Web Search</text>
+  <text x="968" y="425" fill="#426A48" font-family="Arial, sans-serif" font-size="16">allowed domains only</text>
+
+  <path d="M230 183H287" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M278 175L300 183L278 191" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M550 116C585 102 593 96 620 96" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M610 88L632 96L610 104" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="564" y="92" fill="#55635A" font-family="Arial, sans-serif" font-size="14">save / read</text>
+
+  <path d="M550 220C585 230 598 245 620 260" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M609 252L632 267L606 266" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="552" y="253" fill="#55635A" font-family="Arial, sans-serif" font-size="14">queue analysis</text>
+
+  <path d="M870 116H927" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M918 108L940 116L918 124" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="877" y="98" fill="#55635A" font-family="Arial, sans-serif" font-size="14">LLM call</text>
+
+  <path d="M870 265H927" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M918 257L940 265L918 273" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="878" y="247" fill="#55635A" font-family="Arial, sans-serif" font-size="14">RAG lookup</text>
+
+  <path d="M1040 323V352" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1032 343L1040 365L1048 343" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1060" y="347" fill="#55635A" font-family="Arial, sans-serif" font-size="14">optional</text>
+
+  <path d="M745 178V202" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M737 193L745 215L753 193" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="760" y="198" fill="#55635A" font-family="Arial, sans-serif" font-size="14">entry id</text>
+
+  <path d="M745 323V392C745 430 690 448 550 448H240C175 448 145 418 145 362V239" stroke="#55635A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M137 248L145 226L153 248" fill="none" stroke="#55635A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="420" y="470" fill="#55635A" font-family="Arial, sans-serif" font-size="14">analysis saved, later returned to client</text>
+</svg>

@@ -2,6 +2,8 @@
 
 육아 일기를 저장하고, OpenAI 기반 분석 결과를 생성해 다시 조회할 수 있도록 구성한 FastAPI 백엔드 프로젝트입니다.
 
+![Architecture Diagram](assets/architecture-diagram.svg)
+
 ## Overview
 
 사용자가 육아 일기를 작성하면 백엔드는 먼저 기록을 DB에 저장합니다. AI 분석은 저장 응답에 직접 묶지 않고 백그라운드에서 수행합니다. 분석 시에는 사용자 일기와 함께 OpenAI Vector Store에 미리 적재된 발달이론, 육아 관련 자료를 `file_search`로 검색해 참고하고, 필요 시 제한된 도메인에 한해 `web_search`를 보조적으로 사용합니다. 생성된 분석 결과는 다시 DB에 저장되며, 이후 프론트엔드에서 조회할 수 있습니다.
