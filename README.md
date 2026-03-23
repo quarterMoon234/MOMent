@@ -1,184 +1,171 @@
-# AI NurtureNote
+# AI NurtureNote Backend
 
-AI 기반 육아 일기(Parenting Diary)와 분석 도우미입니다. FastAPI 백엔드와 React 프런트엔드를 사용하며, OpenAI Assistants API를 통해 최근 기록을 요약하고 관찰/조언을 생성합니다.
+육아 일기를 저장하고, OpenAI 기반 분석 결과를 생성해 다시 조회할 수 있도록 구성한 FastAPI 백엔드 프로젝트입니다.
 
-## 주요 기능
-- 일기 기록 저장: 감정과 자유 기록을 저장 (SQLite 또는 Postgres)
-- 일기 목록 보기: 저장된 일기와 AI 분석 결과를 한눈에 확인
-- 기간 분석: 최근 N일 기록을 요약하고 관찰/조언/근거/인용을 반환
-- 백그라운드 AI 분석: 기록 저장은 즉시 완료되고, 분석이 완료되면 자동으로 일기에 반영
-- OpenAI Assistants API 연동: 파일 검색(Vector Store) 리소스 사용 가능
-- 로깅: JSON 라인 형태 로그 및 모델 응답 보관
+## Overview
 
-## 폴더 구조
-- `app/` — FastAPI 백엔드 (엔드포인트, DB, OpenAI 연동)
-- `frontend/` — React UI (CRA 기반)
-- `logs/` — 애플리케이션 로그 및 모델 응답 JSON 보관
-- `entries.db` — 기본 SQLite DB 파일 (개발 기본값)
-- `.env` — 환경 변수 파일 (비공개 키 저장; 커밋 금지)
-- `requirements.txt` — 백엔드 파이썬 의존성 목록
+사용자가 육아 일기를 작성하면 백엔드는 먼저 기록을 DB에 저장합니다. AI 분석은 저장 응답에 직접 묶지 않고 백그라운드에서 수행합니다. 분석 시에는 사용자 일기와 함께 OpenAI Vector Store에 미리 적재된 발달이론, 육아 관련 자료를 `file_search`로 검색해 참고하고, 필요 시 제한된 도메인에 한해 `web_search`를 보조적으로 사용합니다. 생성된 분석 결과는 다시 DB에 저장되며, 이후 프론트엔드에서 조회할 수 있습니다.
 
-## 빠른 시작
-### 1) 백엔드 (FastAPI)
-필수 사전 준비: Python 3.10+ 권장
+## Features
+
+- FastAPI 기반 API 계층 구성
+- 일기 저장, 목록 조회, 기간 분석 엔드포인트 구현
+- SQLite/Postgres 기반 데이터 저장 계층 구현
+- OpenAI API 호출 결과를 서비스 흐름에 연결
+- 저장 요청과 AI 분석을 분리한 비동기 처리 구조 구성
+- AI 응답 정규화 및 DB 저장 로직 연결
+- 프론트엔드가 재조회 가능한 응답 구조 설계
+- 구조화된 로그 및 모델 응답 보관 로직 구성
+
+## Core Flow
+
+1. 프론트엔드가 `POST /entries`로 육아 일기를 전송합니다.
+2. 백엔드는 일기 원문과 메타데이터를 DB에 저장합니다.
+3. 저장 응답은 바로 반환하고, AI 분석은 백그라운드 태스크로 분리합니다.
+4. 분석 로직은 OpenAI API를 호출하면서 `file_search`로 OpenAI Vector Store를 조회합니다.
+5. 부족한 경우에만 허용된 공신력 도메인에 대해 `web_search`를 사용합니다.
+6. 분석 결과를 표준 JSON 형식으로 정규화한 뒤 DB에 저장합니다.
+7. 프론트엔드는 `GET /entries` 또는 `POST /analyze`로 저장된 결과를 조회합니다.
+
+## Architecture Notes
+
+- 앱 데이터 저장소: SQLite 또는 Postgres
+- RAG 지식 저장소: OpenAI Vector Store
+- 백엔드 프레임워크: FastAPI
+- AI 호출 방식: OpenAI Responses API 우선, 실패 시 Assistants API 폴백
+- 비동기 처리: FastAPI `BackgroundTasks`
+
+즉 이 프로젝트에서 Postgres는 벡터 DB가 아니라 사용자 일기와 AI 분석 결과를 저장하는 애플리케이션 DB 역할을 합니다. RAG에 필요한 발달이론/논문/가이드 문서는 OpenAI Vector Store에 사전 적재되어 있고, 분석 시점에는 해당 스토어를 검색해 답변 생성에 활용합니다.
+
+## Backend Design
+
+- API 요청을 검증하고 DB에 저장하는 흐름 구현
+- AI 분석 요청을 백엔드 서비스 계층에서 호출하도록 연결
+- 분석 결과를 정규화해 DB에 저장하고 API 응답으로 노출
+- 저장과 분석을 분리해 응답 지연을 줄이는 구조 설계
+- 앱 데이터 저장소와 RAG 지식 저장소를 분리한 구조 유지
+- 장애 상황에서 폴백과 로깅이 가능하도록 구성
+
+전체적으로 AI 기능을 백엔드 서비스 흐름에 연결하고, 저장과 조회가 가능한 형태로 운영하는 데 초점을 둔 구조입니다.
+
+## Repository Map
+
+### `app/main.py`
+
+FastAPI 앱 생성, CORS 설정, 라우터 등록, 서버 시작 시 DB 초기화를 담당합니다.
+
+### `app/routers/entries.py`
+
+핵심 API 엔드포인트를 제공합니다.
+
+- `POST /entries`: 일기 저장 후 단건 분석을 백그라운드로 큐잉
+- `GET /entries`: 최근 일기와 분석 결과 조회
+- `POST /analyze`: 최근 N일치 기록을 기반으로 종합 분석 수행
+
+### `app/models.py`
+
+Pydantic 기반 요청/응답 스키마와 내부 데이터 모델을 정의합니다.
+
+- `EntryCreate`: 일기 생성 요청
+- `EntryResponse`: 일기 조회 응답
+- `AnalyzeRequest`: 기간 분석 요청
+- `AnalyzeResponse`: 기간 분석 응답
+- `EntryRecord`: 내부 DB 변환용 dataclass
+
+### `app/db.py`
+
+애플리케이션 DB 접근 계층입니다.
+
+- SQLite 또는 Postgres 연결 생성
+- `entries` 테이블 초기화
+- 일기 저장/조회
+- AI 분석 결과 `analysis_json` 저장
+- DB row와 응답 모델 간 변환
+
+### `app/analysis.py`
+
+AI 분석 서비스 레이어입니다.
+
+- OpenAI 클라이언트 초기화
+- 프롬프트 생성
+- Responses API 호출
+- `file_search`를 통한 OpenAI Vector Store 검색
+- 필요 시 `web_search` 병행
+- 실패 시 Assistants API 폴백
+- 모델 응답 로깅 및 표준 구조 반환
+
+### `app/analysis_normalization.py`
+
+LLM 응답을 서비스 내부 표준 스키마로 맞추는 후처리 계층입니다. 응답 키 이름이 달라져도 일관된 구조로 정리해 DB 저장 및 프론트 반환 형식을 안정적으로 유지합니다.
+
+### `app/tasks.py`
+
+저장 직후 AI 분석을 백그라운드에서 수행하는 비동기 작업을 담당합니다. 사용자가 저장 응답을 기다리는 시간을 줄이기 위한 계층입니다.
+
+### `app/logging_config.py`
+
+구조화된 로그를 남기기 위한 로깅 설정 파일입니다. 콘솔 로그와 JSON 파일 로그를 함께 남깁니다.
+
+## Design Highlights
+
+- 저장 API와 AI 분석을 분리해 응답 지연을 줄인 점
+- 앱 DB와 RAG 지식 저장소를 분리한 점
+- 외부 AI API 실패를 고려해 폴백 경로를 둔 점
+- LLM 결과를 그대로 쓰지 않고 정규화한 점
+- 분석 결과를 재조회 가능한 데이터로 저장한 점
+
+## Tech Stack
+
+- Python
+- FastAPI
+- Pydantic
+- SQLite / Postgres
+- OpenAI Responses API / Assistants API
+- OpenAI Vector Store
+
+## Run Locally
+
+### 1. 백엔드 실행
 
 ```bash
-# 1) 가상환경 생성 및 활성화
 python3 -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-
-# 2) 의존성 설치
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# 3) 환경 변수 설정 (.env 파일 생성 권장)
-# 아래 "환경 변수" 섹션 참고
-
-# 4) 개발 서버 실행 (자동으로 DB 테이블 초기화)
 uvicorn app.main:app --reload --port 8000
-# 브라우저에서 문서 확인: http://127.0.0.1:8000/docs
 ```
 
-CLI 헬퍼(선택):
-```bash
-# 최근 기록 나열 및 DB 초기화 확인
-python -m app.main --list
-
-# 기간 분석 실행 (기본 14일)
-python -m app.main --analyze --range 14 --question "최근 패턴과 개선 팁?"
-
-# 실행 중인 서버로 데모 기록 전송 (기본 일상 시나리오)
-python -m app.main --demo --server http://127.0.0.1:8000
-
-# 다양한 육아 시나리오별 데모 기록 전송
-python -m app.main --demo sick_child --server http://127.0.0.1:8000        # 아픈 아이 돌보기
-python -m app.main --demo first_separation --server http://127.0.0.1:8000   # 어린이집 첫 등원
-python -m app.main --demo new_skill --server http://127.0.0.1:8000         # 새로운 기술 습득
-python -m app.main --demo family_outing --server http://127.0.0.1:8000      # 가족 나들이
-python -m app.main --demo meal_challenge --server http://127.0.0.1:8000     # 식사 도전
-python -m app.main --demo emotional_support --server http://127.0.0.1:8000  # 감정 조절 도와주기
-
-# 사용 가능한 모든 데모 타입 확인
-python -m app.main --demo help
-```
-
-### 2) 프런트엔드 (React)
-필수 사전 준비: Node.js (LTS 권장)
+API 문서:
 
 ```bash
-cd frontend
-npm install
-npm start
-# http://localhost:3000 접속
+http://127.0.0.1:8000/docs
 ```
 
-현재 기본 UI 스켈레톤이 포함되어 있으며, 백엔드 API 연동은 추후 확장할 수 있습니다.
+### 2. 필수 환경 변수
 
-프런트엔드-백엔드 연동(개발):
-- CRA 개발 서버에서 CORS 없이 호출되도록 `frontend/package.json` 에 `proxy: "http://localhost:8000"`가 설정되어 있습니다.
-- 프로덕션 배포 시에는 프런트엔드 환경변수 `REACT_APP_API_BASE`를 백엔드 Origin으로 설정하세요(예: `https://api.example.com`). 설정이 없으면 상대경로로 호출합니다.
-- 일기 작성 화면에서 저장하면 즉시 완료되고, AI 분석은 백그라운드에서 처리되어 목록 화면에 자동 반영됩니다.
-- 목록 화면은 분석이 완료되지 않은 일기에 대해 5초 간격으로 자동 새로고침을 수행합니다.
-
-## 환경 변수
-`.env` 파일(루트)에 아래 값을 설정하세요. 비밀 키는 절대 커밋하지 마세요.
-
-필수
 ```env
-OPENAI_API_KEY=sk-...             # OpenAI API 키
+OPENAI_API_KEY=sk-...
+VECTOR_STORE_ID=vs_xxx
 ```
 
-선택
+선택 환경 변수:
+
 ```env
-OPENAI_API_BASE=https://api.openai.com/v1  # OpenAI API Base (프록시/Azure 사용 시 변경)
-OPENAI_MODEL=gpt-5                         # 사용할 모델명 (기본값 gpt-5)
-VECTOR_STORE_ID=vs_xxx                     # Assistants 파일 검색용 Vector Store ID
-OPENAI_ASSISTANT_ID=asst_xxx               # 기존 Assistant 재사용 시 지정(없으면 자동 생성 후 캐시)
-DATABASE_URL=postgresql://user:pass@host:5432/dbname  # Postgres 사용 시
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000  # 추가 허용 Origin (쉼표 구분)
-REACT_APP_API_BASE=https://your-api-host     # (프런트) 프로덕션에서 사용
+OPENAI_MODEL=gpt-5
+OPENAI_ASSISTANT_ID=asst_xxx
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
-비고
-- 기본 DB는 SQLite(`entries.db`)이며, `DATABASE_URL`을 설정하면 Postgres로 전환됩니다.
-- OpenAI SDK는 Assistants 베타 엔드포인트를 사용합니다. `openai>=1.51.0` 필요.
-- 일부 프록시 환경 변수는 안전을 위해 무시됩니다(`OPENAI_*`, `HTTP(S)_PROXY`, `ALL_PROXY` 등).
+## API Summary
 
-## API 개요
-기본 URL: `http://127.0.0.1:8000`
+- `POST /entries`
+  - 육아 일기 저장
+  - 저장 직후 단건 분석을 백그라운드로 실행
+- `GET /entries`
+  - 최근 일기와 저장된 분석 결과 조회
+- `POST /analyze`
+  - 최근 N일 데이터를 기준으로 종합 분석 수행
 
-- POST `/entries` — 일기 1건 저장 + 단건 분석(가능 시)
-  요청 예시
-  ```json
-  {
-    "mood": "피곤하지만 뿌듯",
-    "body": "아침에 함께 산책하고 낮잠 전 자장가를 불러줌"
-  }
-  ```
+## Notes
 
-- GET `/entries` — 최근 일기 목록 조회 (기본 20건)
-
-- POST `/analyze` — 최근 N일 분석 요약
-  요청 예시
-  ```json
-  {
-    "range_days": 14,
-    "question": "수면 패턴 개선에 도움이 될 팁?"
-  }
-  ```
-
-## 데모 시나리오
-AI 분석 기능을 체험할 수 있는 다양한 육아 시나리오별 데모 데이터가 준비되어 있습니다:
-
-- **default (일상)**: 평범한 일상 속 육아 활동
-- **sick_child (아픈 아이)**: 아픈 아이를 돌보는 상황
-- **first_separation (첫 이별)**: 어린이집 등원 등 첫 이별 경험
-- **new_skill (새로운 기술)**: 아이의 새로운 발달 단계 관찰
-- **family_outing (가족 나들이)**: 가족과 함께한 외출 활동
-- **meal_challenge (식사 도전)**: 새로운 음식이나 식사 관련 에피소드
-- **emotional_support (감정 조절)**: 아이의 감정 조절을 도와주는 상황
-
-각 데모는 실제 육아 일기와 유사한 형식으로 작성되어 AI 분석 결과를 확인할 수 있습니다.
-
-상세 스키마는 Swagger UI(`/docs`)에서 확인하세요.
-
-## 로그와 데이터
-- 애플리케이션 로그: `logs/app.log` (JSON 라인 포맷)
-- 모델 응답 보관: `logs/responses/*.json` (요청/응답 및 메타데이터)
-- 로컬 개발 DB: `entries.db` (SQLite)
-
-## Docker & Railway 배포
-
-백엔드 FastAPI 서버는 단일 컨테이너로 실행할 수 있도록 `Dockerfile`이 준비되어 있습니다. Railway에 업로드하면 자동으로 `PORT` 환경 변수를 주입하므로 별도 설정이 필요 없습니다.
-
-### 로컬에서 이미지 빌드/실행
-
-```bash
-# 1) 이미지 빌드
-docker build -t ai-nurturenote .
-
-# 2) 컨테이너 실행 (호스트 8000 → 컨테이너 ${PORT:-8000})
-docker run --rm -p 8000:8000 \
-  -e OPENAI_API_KEY=sk-... \
-  ai-nurturenote
-# http://localhost:8000/docs
-```
-
-### Railway 배포 팁
-
-- Railway 프로젝트 생성 후 **Deploy from GitHub** → 이 저장소 선택 → 기본 `Dockerfile` 사용.
-- 환경 변수:
-  - `OPENAI_API_KEY` (필수)
-  - 필요 시 `OPENAI_MODEL`, `VECTOR_STORE_ID`, `DATABASE_URL`, `CORS_ORIGINS` 등.
-- Postgres를 함께 사용하려면 Railway Postgres 애드온을 추가하고 연결 정보를 `DATABASE_URL`로 주입하세요.
-- 컨테이너 내 기본 커맨드는 `uvicorn app.main:app --host 0.0.0.0 --port ${PORT}` 입니다.
-
-프런트엔드는 별도 정적 호스팅(예: Vercel, Netlify) 또는 Railway의 또 다른 서비스로 배포한 뒤 `REACT_APP_API_BASE`를 백엔드 도메인으로 지정하면 됩니다.
-
-## 트러블슈팅
-- 401/403 등 OpenAI 오류: `OPENAI_API_KEY`, `OPENAI_API_BASE` 확인
-- 모델/어시스턴트 관련 오류: OpenAI SDK 버전(`openai>=1.51.0`), `OPENAI_MODEL`, `OPENAI_ASSISTANT_ID` 확인
-- DB 연결 오류: `DATABASE_URL` 형식/접근성 확인 (Postgres 사용 시), 또는 `entries.db` 쓰기 권한 확인
-
-## 주의사항
-- 본 서비스는 의료 진단이나 전문 상담이 아닌 일반 정보 제공을 목적으로 합니다.
-- 비밀 키(.env)는 소스 저장소에 절대 커밋하지 마세요.
+프롬프트 설계와 Vector Store에 적재할 문서 구성은 별도로 관리되며, 이 저장소는 FastAPI 백엔드와 데이터 처리 흐름 중심으로 구성되어 있습니다.
