@@ -2,7 +2,7 @@
 
 육아 일기를 저장하고, OpenAI 기반 분석 결과를 생성해 다시 조회할 수 있도록 구성한 FastAPI 백엔드 프로젝트입니다.
 
-![Architecture Diagram](assets/architecture-diagram.svg)
+![Architecture Diagram](assets/architecture-diagram.png)
 
 ## Overview
 
